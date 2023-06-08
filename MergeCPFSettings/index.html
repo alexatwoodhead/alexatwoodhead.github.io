@@ -1,0 +1,685 @@
+<head>
+<script>
+ function calculateAuth(checked, value=0) {
+    value=parseInt(value);
+	authResult=document.getElementById('mrgCSPAuthValueResult')
+    if (authResult!=null) {
+        currentValue=parseInt(authResult.innerText);
+		if (checked) {
+            currentValue+=value;
+        } else {
+            currentValue-=value;
+        }
+        authResult.innerText=''+currentValue;
+	} else {
+	   authResult.innerText=''+currentValue;
+    }
+}
+function viewRestCSP(mode="CSP") {
+  restOnlyVisibleList=['mrgCSP_TD_DispatchClass','mrgCSP_TD_RedirectEmptyPath','mrgCSP_TD_JWTAuthEnabled','mrgCSP_TD_JWTAccessTokenTimeout','mrgCSP_TD_JWTRefreshTokenTimeout','mrgCSPJWTAuthEnabledLabel'];
+  cspOnlyVisibleList=['mrgCSP_TD_DeepSeeEnabled','mrgCSP_TD_InbndWebServicesEnabled','mrgCSP_TD_CSRFToken','mrgCSP_TD_ServeFiles','mrgCSP_TD_ServeFilesTimeout','mrgCSP_TD_Path','mrgCSP_TD_Package','mrgCSP_TD_SuperClass',
+  'mrgCSP_TD_Recurse','mrgCSP_TD_AutoCompile','mrgCSP_TD_LockCSPName','mrgCSP_TD_LoginPage','mrgCSP_TD_ChangePasswordPage','mrgCSP_TD_ErrorPage','mrgCSP_TD_CookiePath'];
+  node=document.getElementById('mrgCSPJWTAuthEnabled');
+  if (node!=null) {
+    isJWT=node.checked;
+  } else {
+	isJWT=false;
+  }
+  for (i=0;i<restOnlyVisibleList.length;i++) {
+	nodeName=restOnlyVisibleList[i];
+    node=document.getElementById(nodeName);
+    if (node!=null) {
+      if (mode=='CSP') {
+        //node.enabled=0;
+        node.hidden=1;
+      } else {
+	    if ((nodeName=='mrgCSP_TD_JWTAccessTokenTimeout')||(nodeName=='mrgCSP_TD_JWTRefreshTokenTimeout')) {
+		  node.hidden=isJWT?0:1;
+		} else if (nodeName=='mrgCSPJWTAuthEnabledLabel') {
+		  node.hidden=isJWT?1:0;
+		} else {
+        //node.enabled=1;
+          node.hidden=0;
+		}
+      }
+    }
+  }
+  for (i=0;i<cspOnlyVisibleList.length;i++) {
+    node=document.getElementById(cspOnlyVisibleList[i]);
+    if (node!=null) {
+      if (mode=='CSP') {
+        //node.enabled=1;
+        node.hidden=0;
+      } else {
+        //node.enabled=0;
+        node.hidden=1;
+      }
+    }
+  }
+}
+
+function mrgCSPToggleJWTOptions(checked) {
+  visibileList=['mrgCSP_TD_JWTAccessTokenTimeout','mrgCSP_TD_JWTRefreshTokenTimeout'];
+  for (i=0;i<visibileList.length;i++) {
+    node=document.getElementById(visibileList[i]);
+    if (node!=null) {
+      if (checked==true) {
+        node.hidden=0;
+      } else {
+        node.hidden=1;
+      }
+    }
+  }
+  node=document.getElementById('mrgCSPJWTAuthEnabledLabel')
+  if (node!=null) {
+      if (checked==false) {
+        node.hidden=0;
+      } else {
+        node.hidden=1;
+      }
+    }
+}
+
+function safeIt(str="") {
+    try {
+		str=str.replace(/(\n|\r|\t|[,\""])/g," ").trim()
+	} catch {
+	    str="Error in safeIt"
+	}
+	return str
+}
+
+function determineCreateApplication() {
+
+  
+  // Are some differences in output REST vs CSP/ZEN
+  res='CreateApplication:';
+  cspname='';
+  errors='';
+  node=document.getElementById('mrgCSPName');
+  data=safeIt(node.value)
+  
+  // Validate required
+  if (node!=null) {res+='Name='+data; cspname=data};
+  
+  node=document.getElementById('mrgCSPDescription');
+  if ((node!=null) && (data.length>0)) {res+=',Description='+safeIt(node.value)}; 
+  node=document.getElementById('mrgCSPNameSpace');
+  // Validate required?
+  if (node!=null) {res+=',NameSpace='+safeIt(node.value)};
+  
+  node=document.getElementById('mrgCSPIsNamespaceDefault');
+  if ((node!=null) && (node.checked==true)) {
+     res+=',IsNameSpaceDefault=1';
+  } else {
+     res+=',IsNameSpaceDefault=0'
+  }
+  node=document.getElementById('mrgCSPEnabled');
+  if ((node!=null) && (node.checked==true)) {
+     res+=',Enabled=1';
+  } else {
+     res+=',Enabled=0'
+  }
+    
+  node=document.getElementById('mrgCSPEnableCSPZEN');
+  if (node!=null && (node.checked==true)) {
+     res+=',CSPZENEnabled=1';
+	 isCSP=true;
+  } else {
+     res+=',CSPZENEnabled=0'
+     isCSP=false;
+  }
+  
+  <!-- Dispatch -->
+  if (isCSP) {
+      
+    // Analytics Enabled: boolean
+	node=document.getElementById('mrgCSPDeepSeeEnabled')
+	if ((node!=null) && (node.checked==true)) {
+      res+=',DeepSeeEnabled=1';
+    }  else {
+      res+=',DeepSeeEnabled=0'
+    }
+    // Webservices Enabled: boolean
+	node=document.getElementById('mrgCSPInbndWebServicesEnabled')
+	if ((node!=null) && (node.checked==true)) {
+      res+=',InbndWebServicesEnabled=1';
+    }  else {
+      res+=',InbndWebServicesEnabled=0'
+    }
+    // CSRFToken protection Enabled: boolean
+	node=document.getElementById('mrgCSPCSRFToken')
+	if ((node!=null) && (node.checked==true)) {
+      res+=',CSRFToken=1';
+    }  else {
+      res+=',CSRFToken=0'
+    }
+   
+  } else {
+    // Rest Specific fields
+	// Dispatch Class: string
+	node=document.getElementById('mrgCSPDispatchClass')
+	data=safeIt(node.value)
+	if ((node!=null)&&(data.length>0)) {res+=',DispatchClass='+data};
+	
+	// Redirect Empty Path: boolean
+	node=document.getElementById('mrgCSPRedirectEmptyPath')
+	if ((node!=null) && (node.checked==true)) {
+      res+=',RedirectEmptyPath=1';
+    }  else {
+      res+=',RedirectEmptyPath=0'
+    }
+	
+	// Use JWT Authentication: boolean
+	jwtEnabled=false
+	node=document.getElementById('mrgCSPJWTAuthEnabled')
+	if ((node!=null) && (node.checked==true)) {
+      res+=',JWTAuthEnabled=1';
+	  jwtEnabled=true
+    }  else {
+      res+=',JWTAuthEnabled=0'
+    }
+	
+	if (jwtEnabled) {
+	  // JWT Access Token Timeout: number
+	  node=document.getElementById('mrgCSPJWTAccessTokenTimeout')
+	  data=safeIt(node.value)
+	  if ((node!=null)&&(data.length>0)) {res+=',JWTAccessTokenTimeout='+data};
+	 
+	  // JWT Refresh Token Timeout: number
+	  node=document.getElementById('mrgCSPJWTRefreshTokenTimeout')
+	  data=safeIt(node.value)
+	  if ((node!=null)&&(data.length>0)) {res+=',JWTRefreshTokenTimeout='+data};
+	}
+  
+  }
+  
+  node=document.getElementById('mrgCSPResource');
+  data=safeIt(node.value)
+  if ((node!=null)&&(data.length>0)) {res+=',Resource='+data};
+  
+  node=document.getElementById('mrgCSPGroupById');
+  data=safeIt(node.value)
+  if ((node!=null)&&(data.length>0)) {res+=',GroupById='+data};
+  
+  node=document.getElementById('mrgCSPAuthValueResult');
+  if (node!=null) {res+=',AutheEnabled='+node.innerText};
+  
+  node=document.getElementById('mrgCSPPermittedClasses');
+  data=safeIt(node.value)
+  if ((node!=null)&&(data.length>0)) {res+=',PermittedClasses='+data};
+  
+  <!-- End Security Settings -->
+  
+  <!-- *** Start Session Settings *** -->
+  // Session Timout
+  node=document.getElementById('mrgCSPTimeout');
+  data=safeIt(node.value)
+  if ((node!=null) && parseInt(data)) {
+    res+=',Timeout='+data;
+  } else {
+    res+=',Timeout=900';
+  }
+  // Event Class
+  node=document.getElementById('mrgCSPEventClass');
+  data=safeIt(node.value)
+  if ((node!=null)&&(data.length>0)) {res+=',EventClass='+data};
+  // Use Cookie for Session
+  node=document.getElementById('mrgCSPUseCookies');
+  data=safeIt(node.value)
+  if ((node!=null)&&(data.length>0)) {res+=',UseCookies='+data};
+  // Session Cookie Path
+  node=document.getElementById('mrgCSPCookiePath');
+  data=safeIt(node.value)
+  if (node!=null) {
+     if (data.length>0) {
+	     // from select list
+	     res+=',CookiePath='+data;
+     } else { res+=',CookiePath='+cspname;}
+  } else {
+    res+=',CookiePath='+cspname;
+  }
+  // Session Cookie Scope
+  node=document.getElementById('mrgCSPSessionScope');
+  data=safeIt(node.value)
+  if ((node!=null) && (data.length>0)) { res+=',SessionScope='+data; }
+ // User Cookie Scope
+  node=document.getElementById('mrgCSPUserCookieScope');
+  data=safeIt(node.value)
+  if ((node!=null) && (data.length>0)) { res+=',UserCookieScope='+data; }
+  <!-- *** End Session Settings *** -->
+ 
+  <!-- *** Start CSP File Settings *** -->
+  if (isCSP) {
+    // Serve Files
+    node=document.getElementById('mrgCSPServeFiles');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) { res+=',ServeFiles='+data; }
+    // Serve Files Timeout
+    node=document.getElementById('mrgCSPServeFilesTimeout');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) {
+      res+=',ServeFilesTimeout='+data;
+    } else {
+      res+=',ServeFilesTimeout=3600';
+    } 
+    // Physical Path
+    node=document.getElementById('mrgCSPPath');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) { res+=',Path='+data; }
+    // Recurse  : Boolean
+    node=document.getElementById('mrgCSPRecurse');
+    if ((node!=null) && (node.checked=true)) {
+       res+=',Recurse=1';
+    } else {
+       res+=',Recurse=0'
+    } 
+    // AutoCompile: Boolean
+    node=document.getElementById('mrgCSPAutoCompile');
+    if ((node!=null) && (node.checked == true)) {
+       res+=',AutoCompile=1';
+    } else {
+       res+=',AutoCompile=0'
+    }
+    // LockCSPName: Boolean
+    node=document.getElementById('mrgCSPLockCSPName');
+    if ((node!=null) && (node.checked==true)) {
+       res+=',LockCSPName=1';
+    } else {
+       res+=',LockCSPName=0'
+    }
+  }
+  <!-- *** End CSP File Settings *** -->
+ 
+  <!-- *** Start Custom Pages Settings *** -->
+  // Login Page
+  if (isCSP) {
+    node=document.getElementById('mrgCSPLoginPage');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) { res+=',LoginPage='+data; }
+    // Change Password Page
+    node=document.getElementById('mrgCSPChangePasswordPage');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) { res+=',ChangePasswordPage='+data; }
+    // Custom Error Page
+    node=document.getElementById('mrgCSPErrorPage');
+    data=safeIt(node.value)
+    if ((node!=null) && (data.length>0)) { res+=',ErrorPage='+data; }
+  <!-- *** End Custom Pages Settings *** -->
+  }
+  
+  node=document.getElementById('mrgCSPCalculate');
+  //node.innerText=res;
+  node.value=res
+}
+
+/* This function obtains the application name eg: /csp/some/app/test
+ and generates a fixed set of allowed cookie paths
+ 1 - /
+ 2 - /csp
+ 3 - /csp/some/app
+ 4 - /csp/some/app/test
+Note the longest and most specific will be automatically selected
+*/
+function mrgCSPUpdateCookiePath() {
+  nodesource=document.getElementById('mrgCSPName')
+  node=document.getElementById('mrgCSPCookiePath');
+  arrOpts=[];
+  opt=document.createElement("option");
+  opt.value='/';
+  opt.innerText='/';
+  arrOpts.push(opt);
+  if (node!=null) {
+    aryName=(nodesource.value.trim()).split('/');
+	node.replaceChildren(opt);
+	for (i=0;i<=aryName.length;i++) {
+	   optName=aryName.slice(0,i).join('/');
+	   if ((optName!=null) && (optName!=undefined) && (optName!='') && (optName!='/')) {
+	     opt=document.createElement("option");
+		 opt.value=optName
+		 opt.innerText=optName;
+		 // append to array
+		 arrOpts.push(opt);
+		 node.appendChild(opt);
+	   }
+	}
+	// ensure the most specific application is defaulted for use by cookies
+	arrOpts[arrOpts.length-1].selected=true
+   }
+}
+
+function decomposeCreateApplication() {
+   node=document.getElementById('mrgCSPCalculate');
+   if (node==null) return;
+   data=node.value.trim()
+   // Unknown content
+   if (data.split(':')[0]!='CreateApplication') { return;}
+   // Truncate the "CreateApplication:" prefix
+   data=data.substring(18)
+   arrData=data.split(',')
+   //alert(arrData);
+   for (i=0;i<arrData.length;i++) {
+      nvp=arrData[i];
+	  key=nvp.split('=')[0];
+	  value=nvp.substring(key.length+1);
+	  node=document.getElementById('mrgCSP'+key);
+	  if (node!=null) {
+	    console.log(node.id);
+	    console.log(node.type);
+	    if (node.type=="checkbox") {
+		  if (value=1) {
+		    node.checked=true;
+		  } else {
+		    node.checked=false;
+		  }
+		} else {
+		  node.value=value;
+		  
+		}
+	  }
+   }  
+   mrgCSPUpdateCookiePath() 
+}
+</script>
+</head>
+<body onload="setTimeout("mrgCSPUpdateCookiePath()",500);setTimeout("viewRestCSP('CSP')",500);">
+<h3>Merge CPF - Application Settings.</h3>
+<p>A simple Graphical tool to simplify writing application settings for merge cpf files.
+<ol>
+<li>Complete the form</li>
+<li>Press the "Compose" button</li>
+</ol>
+<p>Also allows Editing of existing merge cpf application setting string
+<ol>
+<li>Paste existing CPF settings string into bottom of the form.</li>
+<li>Press "Decompose" button</li>
+<li>Adjust settings</li>
+<li>Press Compose</li>
+</ol>
+</p>
+<table>
+  <tr>
+   <td>Name *</td>
+   <td>
+     <input type="text" id="mrgCSPName" style="width:300px" onchange='mrgCSPUpdateCookiePath(this.value)' title="Short Name for Application. Web applications should start with a "/""/>
+   </td>
+   <td>/csp/somename</td>
+  </tr>
+  <tr>
+   <td>Description</td>
+   <td>
+     <input type="text" id="mrgCSPDescription" style="width:300px" title="Application description"/>
+   </td>
+   <td></td>
+  </tr>
+  <tr>
+   <td>NameSpace *</td>
+   <td>
+     <input type="text" id="mrgCSPNameSpace" style="width:200px"/>&nbsp;<input type='checkbox' value=1 id='mrgCSPIsNamespaceDefault' title="The namespace where pages for this application are run (CSP Only)"/>Namespace Default Application</td>
+   <td></td>
+  </tr>
+
+ <tr>
+  <td>Application Enabled</td>
+  <td><input type='checkbox' value=1 checked id='mrgCSPEnabled' title="Application is enabled"/></td>
+  <td></td>
+  </tr>
+
+<tr>
+  <td>Enable</td>
+  <td><input type='radio' value=1 name='mrgCSPEnable' id='mrgCSPEnableRest' onchange='viewRestCSP("Rest")'/><label>REST</label>&nbsp
+      <input type='radio' value=1  name='mrgCSPEnable' id='mrgCSPEnableCSPZEN' onchange='viewRestCSP("CSP")' checked=1/><label>CSP/ZEN</label></td>
+  <td></td>
+</tr>
+<tr id='mrgCSP_TD_DispatchClass' hidden=1>
+   <td>Dispatch Class</td>
+   <td>
+     <input type="text" id="mrgCSPDispatchClass" style="width:300px" title="If defined this will dispatch all requests in this CSP application to this one class. This will bypass the normal url to classname conversion so allowing the specified class complete control over this dispatch of the page. A predefined dispatch class that can be used is 'CSP.REST' which provides REST dispatch capabilities"/>
+   </td>
+   <td></td>
+  </tr>
+  <tr id='mrgCSP_TD_RedirectEmptyPath' hidden=1>
+    <td>Redirect Empty Path</td><td><input type='checkbox' value=1' id='mrgCSPRedirectEmptyPath' title="This specifies whether to use FHIR-standard redirects of empty paths (REST only).
+For example, if the request is for WPath/csp/appname and the app /csp/appname/
+has this property enabled, then instead of serving the request with the next level down
+(csp, if it exists), the request will be served by /csp/appname/"/></td>
+  </tr>
+  <tr id='mrgCSP_TD_JWTAuthEnabled' hidden=1>
+    <td>Use JWT Authentication</td><td><input type='checkbox' value=1' id='mrgCSPJWTAuthEnabled' onchange='mrgCSPToggleJWTOptions(this.checked)' title="Indicates that this application uses JWT Bearer tokens for authentication. This is only relevant for REST applications"/><span id='mrgCSPJWTAuthEnabledLabel' hidden=1>(Further options when enabled)</span></td>
+	<td></td>
+  </tr>
+
+ <tr id='mrgCSP_TD_JWTAccessTokenTimeout' hidden=1 >
+   <td>JWT Access Token Timeout</td>
+   <td>
+     <input type="number" min=0 max=100000 value=60 id="mrgCSPJWTAccessTokenTimeout" style="width:100px" enabled=0 title="Specifies the timeout (in seconds) for JWT Access Tokens. This is only relevant for REST applications where JWTAuthEnabled is true"/> Seconds
+   </td>
+   <td></td>
+  </tr>
+  <tr id='mrgCSP_TD_JWTRefreshTokenTimeout' hidden=1 >
+   <td>JWT Refresh Token Timeout</td>
+   <td>
+     <input type="number" min=0 max=100000 value=900 id="mrgCSPJWTRefreshTokenTimeout" style="width:100px" enabled=0 title="Specifies the timeout (in seconds) for JWT Refresh Tokens. This is only relevant for REST applications where JWTAuthEnabled is true"/> Seconds
+   </td>
+   <td></td>
+  </tr>
+  
+  <!-- Analytics -->
+  <tr id='mrgCSP_TD_DeepSeeEnabled'>
+  <td>Analytics</td>
+  <td><input type='checkbox' value=1 checked id='mrgCSPDeepSeeEnabled' title="Indicates whether DeepSee access is enabled for this application "/></td>
+  <td></td>
+  </tr>
+  
+  <tr id='mrgCSP_TD_InbndWebServicesEnabled' title="Indicates whether this application will process Web Services (CSP Only).">
+  <td>Inbound Web Services</td>
+  <td><input type='checkbox' value=1 checked id='mrgCSPInbndWebServicesEnabled'/></td>
+  <td></td>
+  </tr>
+  
+  <tr id='mrgCSP_TD_CSRFToken'>
+  <td>Prevent login CSRF attack </td>
+  <td><input type='checkbox' value=1 checked id='mrgCSPCSRFToken' title="Prevent login CSRF attack (CSP only).
+When enabled generate a token and cookie in the login page that is validated before accepting any username/password. Enabling this will prevent programatic access to pages in this application that just pass in the username/password on the initial request"/></td>
+  <td></td>
+  </tr>
+  
+  <tr><th colspan=3 bgcolor='#c0c0c0'>Security Settings</th></tr>
+  
+  <tr>
+    <td>Resource Required</td>
+	<td><input type='text' id='mrgCSPResource' style="width:200px" title="The Resource name that controls access to this application.
+If no resource is defined, then it is a public application which anyone can run."/></td>
+  </tr>
+  
+  <tr>
+    <td>Group By Id</td>
+	<td><input type='text' id='mrgCSPGroupById' style="width:200px" title="Indicates whether this application's authentication will move in sync with other applications in the same id group (CSP Only)"/></td>
+  </tr>
+  
+   <tr>
+    <td>Allowed<br/>Authentication<br/>Methods</td>
+    <td>
+  <table bgcolor='navy' cellspacing=1 cellpadding=5 >
+  <tr bgcolor='white'>
+    <td>Unauthenticated</td><td><input type='checkbox' checked value=64 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>Password</td><td><input type='checkbox' value=32 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>Kerberos</td><td><input type='checkbox' value=4 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>Delegated</td><td><input type='checkbox' value=8192 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>LDAP</td><td><input type='checkbox' value=2048 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>Two-factor Time-based One-time Password</td><td><input type='checkbox' value=2097152 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr bgcolor='white'>
+    <td>Login Cookie</td><td><input type='checkbox' value=16384 onchange='calculateAuth(this.checked, this.value);'/></td>
+  </tr>
+  <tr><td></td><td></td></tr>
+  <tr bgcolor='white'><td style align='right'>Auth Value = </td><td id='mrgCSPAuthValueResult'>64</td></tr>
+</table>
+</td>
+  <td></td>
+</tr>
+  
+  <tr>
+    <td>Permitted Classes</td>
+	<td><input type='text' id='mrgCSPPermittedClasses' style="width:300px" title='A name pattern which is used by the CSP Server to limit the classes which may be run in this application.
+This is a COS pattern, (1""B"",1""A"".1N) match {B.cls, A0.cls ... A9.cls}'/></td>
+  </tr>
+  
+  <tr><th colspan=3 bgcolor='#c0c0c0'>Session Settings</th></tr>
+  
+  <tr>
+  <td>Session Timeout</td>
+  <td><input type='number' min=0 max=100000 value=900 id='mrgCSPTimeout' style="width:100px" title="This specifies the default session timeout, in seconds (CSP Only)."/> Seconds</td>
+  <td></td>
+</tr>
+  
+  <tr>
+    <td>Event Class</td>
+	<td><input type='text' id='mrgCSPEventClass' style="width:300px" title="This specifies the class whose methods are invoked for CSP application events,
+such as a timeout (CSP Only"/></td>
+  </tr>
+  
+  <tr>
+    <td>Use Cookie for Session</td>
+	<td><select id='mrgCSPUseCookies' style="width:200px" title="This specifies whether to use cookies for CSP session management or not (CSP Only).
+You can set this on a per-application basis. It does NOT affect the user's use of
+cookies in their application, simply how the session is managed">
+	<option value='0' title="This will just use the CSPCHD parameter to persist the session
+state from page to page and will not send a cookie to the browser at all.">Never</option>
+	<option value='1' title="This will start by sending the cookie to the browser and
+also including the CSPCHD parameter in all the links and forms. Then when the user clicks
+on the next link if the browser accepted the cookie it will switch to the 'Always'
+mode and turn off the use of the CSPCHD parameters. If the browser did not accept
+the cookie it will turn into the 'Never' mode.">Autodetect</option>
+	<option value='2' selected title="Do not include the CSPCHD parameter">Always</option>
+	</select>
+    </td>
+  </tr>
+  
+  <tr>
+  <td>Session Cookie Path</td>
+  <td><Select id='mrgCSPCookiePath' name='mrgCSPCookiePath' style="width:300px" title="Scope of the session cookie (CSP Only).
+This determines which urls the browser will send the session cookie back to InterSystems IRIS.
+If your application name is 'myapp', it defaults to '/myapp/' meaning it will only send
+the cookie for pages under '/myapp/'. You should restrict this to only what is required
+by your application to prevent this session cookie being used by other CSP application
+on this machine, or from being seen by any other application on this web server">
+</select>
+</td>
+  <td>Must be the same or a sub-path of CSP Application name eg: /csp/somepath</td>
+</tr>
+  <tr>
+    <td>Session Cookie Scope</td>
+	<td><select id='mrgCSPSessionScope' style="width:200px">
+	<option value='0' title="Send cookie with cross-site requests">None</option>
+	<option value='1' title="Send cookie with top-level cross-site navigation">Lax</option>
+	<option value='2' selected title="Do not send cookie with cross-site requests.">Strict</option>
+	</select>
+    </td>
+  </tr>
+  <tr>
+    <td>User Cookie Scope</td>
+	<td><select id='mrgCSPUserCookieScope' style="width:200px" title="SameSite value that is used for CSP Session cookies.
+This setting affects whether session cookies are sent for cross-site requests.
+The default setting for a new application is Strict.">
+	<option value='0' title="Send cookie with cross-site requests">None</option>
+	<option value='1' title="Send same-site cookies with top-level cross-site navigation">Lax</option>
+	<option value='2' selected title="Do not send same-site cookies with cross-site requests">Strict</option>
+	</select>
+    </td>
+  </tr>
+  <tr><th colspan=3 bgcolor='#c0c0c0'>CSP File Settings</th></tr>
+  
+  <tr id='mrgCSP_TD_ServeFiles'>
+    <td>Serve Files</td>
+	<td><select id='mrgCSPServeFiles' style="width:200px" title="Allows the web server built into InterSystems IRIS to serve up static files, e.g., html or jpg files,
+from this application path (CSP Only).
+This also allows the stream server to serve files from this path.">
+	<option value='0' title="Never serve files from this application path">No</option>
+	<option value='1' selected title="Always serve files from this application path, ignore CSP security setting for this path for static files. This is the default for new applications as it is backward compatible with serving files from the web server">Always</option>
+	<option value='2' title="Always serve files from this application path and allow the CSP gateway to cache these files to avoid having to request them from InterSystems IRIS. This is the mode we expect deployed application to use">Always and cached</option>
+	<option value='3' title="If the user has permissions to view a csp/cls page in this application then allow them to view a static file, if they do not have permissions to view a csp/cls page then return a 404 page not found page">Use CSP security</option>
+	</select>
+    </td>
+  </tr>
+  
+<tr id='mrgCSP_TD_ServeFilesTimeout'>
+  <td>ServeFilesTimeout</td>
+  <td><input type='number' min=0 max=100000 id='mrgCSPServeFilesTimeout' value='3600' style="width:100px" title="Time, in seconds, of how long to cache static files."/> Seconds</td>
+  <td></td>
+</tr>
+
+
+<tr id='mrgCSP_TD_Path'>
+  <td>Physical Path</td>
+  <td><input type='text' id='mrgCSPPath' style="width:300px" title="This specifies the physical path (directory) for the CSP files on the InterSystems IRIS server (CSP Only)."/></td>
+  <td>/durable/irissys/csp/somename</td>
+</tr>
+
+<tr id='mrgCSP_TD_Recurse'>
+  <td>Recurse</td>
+  <td><input type='checkbox' value=1 id='mrgCSPRecurse' title="This specifies whether to use subdirectories (CSP Only).
+If WPath is the Web Path and PPath is the Physical Path, then with recurse turned on,
+WPath/xxx/yyy will look in PPath/xxx/yyy. If recurse is turned off, only files directly
+contained in WPath are used."/></td>
+  <td></td>
+</tr>
+
+<tr id='mrgCSP_TD_AutoCompile'>
+  <td>AutoCompile</td>
+  <td><input type='checkbox' value=1 id='mrgCSPAutoCompile' title="This specifies whether CSP files should automatically compile or not (CSP Only).
+If this is turned on, then when a CSP file is more recent than its compiled class,
+it is recompiled. This is normally something you would turn on in development environments
+and turn off in production environments"/></td>
+  <td></td>
+</tr>
+
+<tr id='mrgCSP_TD_LockCSPName'>
+  <td>LockCSPName</td>
+  <td><input type='checkbox' value=1 id='mrgCSPLockCSPName' title="Lock CSP Name (CSP Only).
+If true then you can only access this CSP page if the url you enter matches the url stored in the CSPURL parameter value in the class. CSP pages have the CSPURL set to the original url requested automatically when they are compiled. If the url does not match you get a page not found error. For example if you have two CSP applications defined that both map to the same namespace and the same directory '/A' and '/B'. Then you view '/A/page.csp' this will load this page and create the class 'csp.page' with the CSPURL parameter set to '/A/page.csp'. With this flag set you may only access this page using the url '/A/page.csp'. If this flag is false you may access it via the pages '/B/page.csp', '/A/csp.page.cls', '/B/csp.page.cls'. Note that the flag is checked on the application associated with the CSPURL parameter, so even if the '/B' application has the flag turned off, if the '/A' application has it turned on you will get a page not found error from '/B/page.csp'. If you modify the CSP class and change the CSPURL=&quot;&quot; then this disables checking for this page"/></td>
+  <td></td>
+</tr>
+
+<tr><th colspan=3 bgcolor='#c0c0c0'>Custom Pages</th></tr>
+<tr id='mrgCSP_TD_LoginPage'>
+  <td>Login Page</td>
+  <td><input type='text' id='mrgCSPLoginPage' style="width:300px" title="A predefined login page that can be sent out to the browser if the application requires
+an authenticated identity and one is not available yet (CSP Only)."/></td>
+  <td></td>
+</tr>
+<tr id='mrgCSP_TD_ChangePasswordPage'>
+  <td>Change Password Page</td>
+  <td><input type='text' id='mrgCSPChangePasswordPage' style="width:300px" title="A predefined change password page that can be sent out to the browser if the user account requires
+that a password change is required(CSP Only)."/></td>
+  <td></td>
+</tr>
+<tr id='mrgCSP_TD_ErrorPage'>
+  <td>Custom Error Page</td>
+  <td><input type='text' id='mrgCSPErrorPage' style="width:300px" title="A CSP or CLS page that will be displayed if an error occurs when generating the page (CSP Only)."/></td>
+  <td></td>
+</tr>
+
+<tr><th colspan=3 bgcolor='#c0c0c0'></th></tr>
+
+</table>
+<table>
+<tr>
+  <td><button onclick='determineCreateApplication()'>Compose</button>
+  <br/><br/><button onclick='decomposeCreateApplication()'>Decompose</button>
+  </td>
+  <td><TextArea id='mrgCSPCalculate' cols=120 rows=5></textArea></td>
+</tr>
+</table>
+</body>
+</html>
